@@ -265,20 +265,4 @@ def pbx(context,stockCode,cycle,minutes,field):
     
     ss = (s + ma2 + ma4) / 3
     
-    return formatDecimal(ss)  
-
-#初始化沪深300    
-# def initHS300():
-    
-## 股票筛选初始化函数
-def check_stocks_initialize():
-    # 设定股票池
-    g.security_universe = get_index_stocks('000300.XSHG')
-    # 是否过滤停盘
-    g.filter_paused = True
-    # 是否过滤退市  
-    g.filter_delisted = True
-    # 是否只有ST
-    g.only_st = False
-    # 是否过滤ST
-    g.filter_st = True    
+    return formatDecimal(ss)
