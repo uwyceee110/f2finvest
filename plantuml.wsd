@@ -1,0 +1,163 @@
+@startuml duocilue
+class Rule{
+    g 
+    name
+    memo
+    log
+    is_to_return
+    + update_params()
+    + initialize()
+    + handle_data()
+    + before_trading_start()
+    + after_trading_end()
+    + process_initialize()
+    + after_code_changed()
+    + to_return()
+    + on_sell_stock()
+    + on_buy_stock()
+    + before_clear_position()
+    + on_clear_position()
+    + on_handle_data_exit()
+    + record()
+    + set_g()
+    + __str__()
+}
+
+class Group_rules{
+    rules
+    cs_enabled, cs_name
+    cs_memo, cs_class_type, cs_param
+    + update_params()
+    + initialize()
+    + handle_data()
+    + before_trading_start()
+    + after_trading_end()
+    + process_initialize()
+    + after_code_changed()
+    + check_chang()
+    + on_sell_stock()
+    + before_clear_position()
+    + on_buy_stock()
+    + on_clear_position()
+    + before_adjust_start()
+    + after_adjust_end()
+    + create_rule()
+    + create_rules()
+    + show_strategy()
+    + get_obj_by_name()
+    + __str__()
+}
+
+Rule <|-- Group_rules : generalization
+
+class Global_variable{
+    context
+    _owner
+    stock_pindexs
+    op_pindexs
+    buy_stocks
+    sell_stocks
+    is_empty_position
+    run_day
+    position_record
+    + __init__()
+    + open_position()
+    + order()
+    + close_position()
+    + get_obj_by_name()
+    + on_log()
+    + get_run_day_count()
+}
+
+class Strategy_Group{
+    + initialize()
+    + handle_data_level()
+    + handle_data()
+    + set_g()
+}
+Group_rules <|-- Strategy_Group : generalization
+
+class Weight_Base{
+    + weight()
+}
+Rule <|-- Weight_Base : generalization
+
+class Time_condition{
+    + __init__()
+    + update_params()
+    + handle_data()
+    + __str__()
+}
+Weight_Base <|-- Time_condition : generalization
+
+class Period_condition{
+    +__init__()
+    + update_params()
+    + handle_data()
+    + on_sell_stock()
+    + _on_clear_position_init__()
+    + __str__()
+}
+Weight_Base <|-- Period_condition : generalization
+
+class Stop_loss_by_price{
+    index
+    day_count
+    multiple
+    is_day_stop_loss_by_price
+    + __init__()
+    + update_params()
+    + handle_data()
+    + before_trading_start()
+    + __str__()
+}
+Rule <|-- Stop_loss_by_price : generalization
+
+class Mul_index_stop_loss{
+    _indexs
+    _min_rate
+    _n
+    + __init__()
+    + update_params()
+    + handle_data()
+    + after_trading_end()
+    + __str__()
+}
+Rule <|-- Mul_index_stop_loss
+
+class Filter_query{
+    + filter()
+}
+Rule <|-- Filter_query
+
+class Filter_stock_list{
+    + filter()
+}
+Rule <|-- Filter_stock_list
+
+class Pick_stocks2{
+    has_run
+    + __init__()
+    + handle_data()
+    + before_trading_start()
+    + __str__()
+}
+Group_rules <|-- Pick_stocks2
+
+class FD_Factor{
+    + __init__()
+}
+
+class Pick_financial_data{
+    + filter()
+    + __str__()
+}
+Filter_query <|-- Pick_financial_data
+
+class Filter_financial_data{
+
+}
+Filter_stock_list <|-- Filter_financial_data
+
+
+@enduml
