@@ -155,9 +155,211 @@ class Pick_financial_data{
 Filter_query <|-- Pick_financial_data
 
 class Filter_financial_data{
-
+    + filter()
+    + __str__()
 }
 Filter_stock_list <|-- Filter_financial_data
 
+class Filter_gem{
+    + filter()
+    + __str__()
+}
+Filter_stock_list <|-- Filter_gem
 
+class Filter_common{
+    + filter()
+    + __str__()
+}
+Filter_stock_list <|-- Filter_common
+
+class SortType{
+
+}
+
+class PriceType{
+
+}
+
+class SortBase{
+    +weight()
+    +is_asc()
+    +_sort_type_str()
+    +sort()
+}
+Rule <|-- SortBase
+
+class SortRules{
+   +filter()   
+   +__str__()   
+}
+Group_rules <|-- SortRules
+Filter_stock_list <|-- SortRules
+
+class Sort_growth_rate{
+    +sort()
+    +__str__()
+}
+SortBase <|-- Sort_growth_rate
+
+class Sort_price{
+    +sort()
+    +__str__()
+}
+SortBase <|-- Sort_price
+
+class Sort_turnover_ratio{
+    +sort()
+    +__str__()
+}
+SortBase <|-- Sort_turnover_ratio
+
+class Sort_financial_data{
+    +sort()
+    +__str__()
+}
+SortBase <|-- Sort_financial_data
+
+class Filter_buy_count{
+    +__init__()
+    +update_params()
+    +filter()
+    +__str__()
+}
+Filter_stock_list <|-- Filter_buy_count
+class Adjust_position{
+    +handle_data()
+}
+Group_rules <|-- Adjust_position
+class Adjust_expand{
+    +before_adjust_start()
+    +after_adjust_end()
+}
+Rule <|-- Adjust_expand
+class Sell_stocks{
+    +handle_data()
+    +adjust()
+    +__str__()
+}
+Rule <|-- Sell_stocks
+class Buy_stocks{
+    +__init__()
+    +update_params()
+    +handle_data()
+    +adjust()
+    +after_trading_end()
+    +__str__()
+}
+Rule <|-- Buy_stocks
+class Op_stocks_record{
+    +__init__()
+    +on_buy_stock()
+    +on_sell_stock()
+    +after_adjust_end()
+    +after_trading_end()
+    +merge_op_list()
+}
+Adjust_expand <|-- Op_stocks_record
+
+class Show_postion_adjust{
+    +after_adjust_end()
+    +len()
+    +len()
+    +__str__()
+}
+Op_stocks_record <|-- Show_postion_adjust
+
+class Set_sys_params{
+    +__init__()
+    +__str__()
+}
+Rule <|-- Set_sys_params
+
+class Set_sys_params{
+    +before_trading_start()
+    +__str__()
+}
+Rule <|-- Set_slip_fee
+
+class Show_position{
+    +__init__()
+    +after_trading_end()
+    +on_sell_stock()
+    +on_buy_stock()
+    +__get_portfolio_info_text()
+    +__str__()
+}
+Rule <|-- Show_position
+class Stat{
+    +__init__()
+    +after_trading_end()
+    +on_sell_stock()
+    +reset()
+    +watch()
+    +report()
+    +print_win_rate()
+    +statis_most_win_percent()
+    +statis_most_loss_percent()
+    +statis_total_profit()
+    +__str__()
+}
+Rule <|-- Stat
+
+class Shipane_manager{
+    +__init__()
+    +update_params()
+    +after_adjust_end()
+    +on_clear_position()
+    +after_trading_end()
+    +get_rate_str()
+    +_get_trader_portfolio_html()
+    +_get_trader_portfolio_text()
+}
+Op_stocks_record <|-- Shipane_manager
+
+class Shipane_Sync{
+    +level()
+    +initialize()
+    +process_initialize()
+    +handle_data()
+}
+Rule <|-- Shipane_Sync
+
+class Purchase_new_stocks{
+    +__init__()
+    +update_params()
+    +handle_data()
+    +__str__()
+}
+Rule <|-- Purchase_new_stocks
+
+class Email_notice{
+    +__init__()
+    +update_params()
+    +before_adjust_start()
+    +after_adjust_end()
+    +after_trading_end()
+    +on_clear_position()
+    +__send_email()
+    +__get_mail_text_before_adjust()
+    +__get_portfolio_info_html()
+    +__str__()
+}
+Op_stocks_record <|-- Email_notice
+
+Strategy_Group .> Global_variable
+Strategy_Group .> Pick_stocks2
+Strategy_Group .> Time_condition
+Strategy_Group .> Stop_loss_by_price
+Strategy_Group .> Mul_index_stop_loss
+Strategy_Group .> Period_condition
+Strategy_Group .> Pick_financial_data
+Strategy_Group .> Filter_gem
+Strategy_Group .> Filter_common
+Strategy_Group .> SortRules
+Strategy_Group .> Sort_financial_data
+Strategy_Group .> Sort_price
+Strategy_Group .> Sort_growth_rate
+Strategy_Group .> Sort_turnover_ratio
+Strategy_Group .> Filter_buy_count
+Strategy_Group .> Adjust_position
 @enduml
