@@ -10,12 +10,14 @@ from email.mime.text import MIMEText
 from email.header import Header
 import datetime
 import enum
-
 import functools
 import sys
 from decimal import *
 import jqdata
 from operator import methodcaller
+
+type = sys.getfilesystemencoding()
+print('---------------------------:',type)
 
 # 不同步的白名单，主要用于实盘易同步持仓时，不同步中的新股，需把新股代码添加到这里。
 # 可把while_list另外放到研究的一个py文件里
@@ -736,25 +738,25 @@ class Stop_loss_by_price(Rule):
         # 大盘指数前130日内最高价超过最低价2倍，则清仓止损
         # 基于历史数据判定，因此若状态满足，则当天都不会变化
         # 增加此止损，回撤降低，收益降低
+        self.is_day_stop_loss_by_price = False
 
-        if not self.is_day_stop_loss_by_price:
-            h = attribute_history(self.index, self.day_count, unit='1d', fields=('close', 'high', 'low'),
-                                  skip_paused=True)
-            low_price_130 = h.low.min()
-            high_price_130 = h.high.max()
-            if high_price_130 > self.multiple * low_price_130 and h['close'][-1] < h['close'][-4] * 1 and h['close'][
-                -1] > h['close'][-100]:
-                # 当日第一次输出日志
-                self.log.info("==> 大盘止损，%s指数前130日内最高价超过最低价2倍, 最高价: %f, 最低价: %f" % (
-                    get_security_info(self.index).display_name, high_price_130, low_price_130))
-                self.is_day_stop_loss_by_price = True
+        h = attribute_history(self.index, self.day_count, unit='1d', fields=('close', 'high', 'low'),
+                                skip_paused=True)
+        low_price_130 = h.low.min()
+        high_price_130 = h.high.max()
+        if high_price_130 > self.multiple * low_price_130 and h['close'][-1] < h['close'][-4] * 1 and h['close'][
+            -1] > h['close'][-100]:
+            # 当日第一次输出日志
+            self.log.info("==> 大盘止损，%s指数前130日内最高价超过最低价2倍, 最高价: %f, 最低价: %f" % (
+                get_security_info(self.index).display_name, high_price_130, low_price_130))
+            self.is_day_stop_loss_by_price = True
 
         if self.is_day_stop_loss_by_price:
             self.g.clear_position(self, context, self.g.op_pindexs)
+
         self.is_to_return = self.is_day_stop_loss_by_price
 
     def before_trading_start(self, context):
-        self.is_day_stop_loss_by_price = False
         pass
 
     def __str__(self):
@@ -1399,7 +1401,7 @@ class Show_position(Rule):
     def after_trading_end(self, context):
         self.log.info(self.__get_portfolio_info_text(context, self.g.op_pindexs))
         self.op_buy_stocks = []
-        self.op_buy_stocks = []
+        self.op_sell_stocks = []
 
     def on_sell_stock(self, position, order, is_normal, new_pindex=0):
         self.op_sell_stocks.append([position.security, order.filled])
@@ -1578,7 +1580,7 @@ def get_growth_rate(security, n=20):
     c = get_close_price(security, 1, '1m')
 
     if not isnan(lc) and not isnan(c) and lc != 0:
-        return (c - lc) / lc
+        return (c - lc) / lc  
     else:
         log.error("数据非法, security: %s, %d日收盘价: %f, 当前价: %f" % (security, n, lc, c))
         return 0
@@ -1595,7 +1597,7 @@ def get_close_price(security, n, unit='1d'):
     '''
     cur_price = np.nan
     for i in range(3):
-        cur_price = attribute_history(security, n, unit, 'close', True)['close'][0]
+        cur_price = attribute_history(security, n, unit, 'close', False)['close'][0]
         if not math.isnan(cur_price):
             break
     return cur_price
