@@ -16,9 +16,6 @@ from decimal import *
 import jqdata
 from operator import methodcaller
 
-type = sys.getfilesystemencoding()
-print('---------------------------:',type)
-
 # 不同步的白名单，主要用于实盘易同步持仓时，不同步中的新股，需把新股代码添加到这里。
 # 可把while_list另外放到研究的一个py文件里
 def while_list():
@@ -54,6 +51,7 @@ def select_strategy(context):
         [True, '', '调仓日计数器', Period_condition, {
             'period': 3,  # 调仓频率,日
         }],
+        [True, '', '瀑布线入场信号', Pbx_Market_Entry_Signal, {}],
     ]
     adjust_condition_config = [
         [True, '_adjust_condition_', '调仓执行条件的判断规则组合', Group_rules, {
@@ -111,7 +109,7 @@ def select_strategy(context):
     pick_new = [
         [True, '_pick_stocks_', '选股', Pick_stocks2, {
             'config': pick_config,
-            'day_only_run_one': True
+            'day_only_run_one': False
         }]
     ]
 
@@ -680,7 +678,7 @@ class Time_condition(Weight_Base):
         hour = context.current_dt.hour
         minute = context.current_dt.minute
         # self.is_to_return = not [hour, minute] in self.times
-        self.is_to_return = int(minute) % 5 == 0
+        self.is_to_return = int(minute) % 5 != 0
         pass
 
     def __str__(self):
@@ -693,7 +691,7 @@ class Period_condition(Weight_Base):
     def __init__(self, params):
         Weight_Base.__init__(self, params)
         # 调仓日计数器，单位：日
-        self.period = params.get('period', 3)
+        self.period = params.get('period', 1)
         self.day_count = 0
 
     def update_params(self, context, params):
@@ -701,7 +699,7 @@ class Period_condition(Weight_Base):
         self.period = params.get('period', self.period)
 
     def handle_data(self, context, data):
-        self.log.info("调仓日计数 [%d]" % (self.day_count))
+        self.log.info("调仓计数 [%d]" % (self.day_count))
         self.is_to_return = self.day_count % self.period != 0
         self.day_count += 1
         pass
@@ -718,7 +716,7 @@ class Period_condition(Weight_Base):
         pass
 
     def __str__(self):
-        return '调仓日计数器:[调仓频率: %d日] [调仓日计数 %d]' % (
+        return '调仓计数器:[调仓频率: %d] [调仓计数 %d]' % (
             self.period, self.day_count)
 
 
@@ -799,6 +797,35 @@ class Mul_index_stop_loss(Rule):
     def __str__(self):
         return '多指数20日涨幅损器[指数:%s] [涨幅:%.2f%%]' % (str(self._indexs), self._min_rate * 100)
 
+#----新增瀑布线入场信号,ma5>ma10,取上证，深成指，创业板指
+class Pbx_Market_Entry_Signal(Rule):
+    def __init__(self, params):
+        Rule.__init__(self, params)
+
+    def update_params(self, context, params):
+        Rule.__init__(self, params)
+
+    def handle_data(self, context, data):
+        self.is_to_return = False
+        i = 0
+        pbx000001 = getPbxData('000001.XSHG',5,'close')
+        pbx399001 = getPbxData('399001.XSHE',5,'close')
+        pbx399006 = getPbxData('399006.XSHE',5,'close')
+
+        if(pbx000001[0] > pbx000001[1]):
+            i += 1
+        if(pbx399001[0] > pbx399001[1]):
+            i += 1
+        if(pbx399006[0] > pbx399006[1]):
+            i += 1
+            
+        if(i == 0):
+            self.is_to_return = True
+            self.log.warn('不符合入场条件!')
+
+    def __str__(self):
+        return '多指数瀑布线入场信号'
+
 
 '''=========================选股规则相关==================================='''
 
@@ -844,7 +871,7 @@ class Pick_stocks2(Group_rules):
         else:
             tl = self.g.buy_stocks[:]
         self.log.info('选股:\n' + join_list(["[%s]" % (show_stock(x)) for x in tl], ' ', 10))
-        self.has_run = True
+        # self.has_run = True
 
     def before_trading_start(self, context):
         self.has_run = False
@@ -1602,6 +1629,31 @@ def get_close_price(security, n, unit='1d'):
             break
     return cur_price
 
+def getPbxData(stockCode,minutes,field):
+    pbx4 = pbx(stockCode,4,minutes,field)
+    pbx6 = pbx(stockCode,6,minutes,field)
+    return pbx4,pbx6
+
+def pbx(stockCode,cycle,minutes,field):
+    closeStock10 = attribute_history(stockCode, cycle, str(minutes)+'m', [field])
+    X = closeStock10[field]
+    s = sma_cn(X,cycle,2)
+    
+    ma2Stock = attribute_history(stockCode, cycle * 2, str(minutes)+'m', [field])
+    ma2 = ma2Stock['close'].mean()
+    
+    ma4Stock = attribute_history(stockCode, cycle * 4, str(minutes)+'m', [field])
+    ma4 = ma4Stock['close'].mean()
+    
+    ss = (s + ma2 + ma4) / 3
+    
+    return formatDecimal(ss)   
+
+def sma_cn(X, n, m):
+    return functools.reduce(lambda a, b: ((n - m) * a + m * b) / n, X)    
+
+def formatDecimal(amount):
+    return Decimal(amount).quantize(Decimal('.01'),rounding=ROUND_DOWN)
 
 # 获取一个对象的类名
 def get_obj_class_name(obj):
